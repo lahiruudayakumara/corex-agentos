@@ -28,6 +28,31 @@ Corex uses four related signals:
 No single signal replaces the others. Event storage is not a high-cardinality
 metrics backend, and logs are not the authoritative run record.
 
+### Telemetry pipeline
+
+```mermaid
+flowchart LR
+    subgraph Sources["Instrumented sources"]
+        API["Control-plane API"]
+        Engine["Workflow engine"]
+        Runtime["Agent runtime"]
+        Workers["Worker infrastructure"]
+    end
+
+    API --> Collector["OpenTelemetry collector"]
+    Engine --> Collector
+    Runtime --> Collector
+    Workers --> Collector
+    Collector --> Traces["Trace backend"]
+    Collector --> Metrics["Metrics backend"]
+    Collector --> Logs["Log backend"]
+    Runtime --> Events["Durable execution events"]
+    Engine --> Events
+    Events --> Explorer["Run and trace explorer"]
+    Events --> Usage["Usage and cost projections"]
+    Traces --> Explorer
+```
+
 ## Trace model
 
 ```text
@@ -44,6 +69,26 @@ Local agent runs use the agent execution as the root span. Retries create
 distinct attempt spans linked to the logical operation. Asynchronous dispatch
 propagates trace context in message headers and records producer/consumer links
 where a direct parent-child relationship would be misleading.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as Control plane
+    participant Broker as Queue
+    participant Worker as Runtime worker
+    participant Model
+    participant Tool
+
+    Client->>API: Create run with trace context
+    API->>Broker: Dispatch and propagate context
+    Broker->>Worker: Consume with linked context
+    Worker->>Model: Child model span
+    Model-->>Worker: Usage and response
+    Worker->>Tool: Child tool span
+    Tool-->>Worker: Result
+    Worker-->>API: Completion event with trace ID
+    API-->>Client: Run links to complete trace
+```
 
 ## Correlation
 

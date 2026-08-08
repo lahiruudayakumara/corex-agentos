@@ -57,6 +57,44 @@ Node state is durable. Scheduling is a projection of node state and dependency
 outcomes, not an in-memory task list. Multiple scheduler instances may inspect
 the same run, so claiming and transition operations must be atomic.
 
+### Example parallel workflow
+
+```mermaid
+flowchart LR
+    Input["Issue and repository context"] --> Plan["Planner agent"]
+    Plan --> Code["Developer agent"]
+    Plan --> Risk["Risk analysis agent"]
+    Code --> Test["Test tool"]
+    Risk --> Gate{"Sensitive change?"}
+    Test --> Review["Reviewer agent"]
+    Gate -- Yes --> Approval["Human approval"]
+    Gate -- No --> Review
+    Approval --> Review
+    Review --> Result["Patch suggestion and trace"]
+```
+
+### Node scheduling sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Engine as Workflow engine
+    participant DB as Durable workflow state
+    participant Queue as Execution queue
+    participant Worker as Runtime worker
+
+    Engine->>DB: Find ready nodes and acquire scheduling lease
+    DB-->>Engine: Ready node with stable attempt ID
+    Engine->>DB: Persist dispatched state and outbox message
+    Engine->>Queue: Publish node command
+    Queue->>Worker: Deliver command
+    Worker->>DB: Claim attempt idempotently
+    Worker->>Worker: Execute node
+    Worker-->>Engine: Emit completion or failure
+    Engine->>DB: Commit terminal attempt state
+    Engine->>DB: Recompute dependent node readiness
+```
+
 ## State model
 
 Workflow state contains immutable input, namespaced node outputs, and explicit
@@ -78,6 +116,20 @@ Retry policy is evaluated from the normalized failure category, node policy,
 attempt count, deadline, and side-effect safety. Failure propagation can stop
 the workflow, skip dependent nodes, or follow an explicitly configured error
 path.
+
+### Recovery decision flow
+
+```mermaid
+flowchart TD
+    Failure["Node attempt fails or lease expires"] --> Classify{"Failure classification"}
+    Classify -->|Permanent or policy denial| Stop["Fail node and propagate configured outcome"]
+    Classify -->|Cancellation| Cancel["Cancel active and dependent nodes"]
+    Classify -->|Transient| Safe{"Retry is safe and budget remains?"}
+    Safe -- No --> Stop
+    Safe -- Yes --> Delay["Schedule bounded backoff with jitter"]
+    Delay --> Retry["Create next attempt with same logical node ID"]
+    Retry --> Execute["Dispatch to an eligible worker"]
+```
 
 ## Pause, resume, and cancellation
 

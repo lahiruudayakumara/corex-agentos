@@ -73,6 +73,56 @@ Model providers, MCP servers, data sources, and observability backends are
 outside the platform trust boundary. Adapters translate their behavior into
 stable Corex contracts and normalize errors, usage, and telemetry.
 
+## Logical planes
+
+```mermaid
+flowchart TB
+    subgraph Experience["Experience plane"]
+        Portal["Developer portal"]
+        CLI["Corex CLI"]
+        SDKs["Python, Go, and TypeScript SDKs"]
+    end
+    subgraph Management["Management plane"]
+        API["Versioned REST API"]
+        Catalog["Projects, agents, workflows, and tools"]
+        Governance["Policy, approval, credentials, and audit"]
+        Scheduler["Run and schedule coordination"]
+    end
+    subgraph Execution["Execution plane"]
+        Dispatcher["Execution dispatcher"]
+        Workers["Python runtime workers"]
+        Engine["Agent and workflow execution"]
+    end
+    subgraph Integration["Integration plane"]
+        Models["Model providers"]
+        MCP["MCP servers"]
+        Knowledge["Knowledge and vector stores"]
+    end
+    subgraph Operations["Operations plane"]
+        Events["Event delivery"]
+        Telemetry["Traces, metrics, and logs"]
+        Eval["Evaluation and usage analytics"]
+    end
+
+    Portal --> API
+    CLI --> API
+    SDKs --> API
+    API --> Catalog
+    API --> Governance
+    API --> Scheduler
+    Scheduler --> Dispatcher
+    Dispatcher --> Workers
+    Workers --> Engine
+    Engine --> Models
+    Engine --> MCP
+    Engine --> Knowledge
+    Catalog --> Events
+    Governance --> Events
+    Engine --> Events
+    Events --> Telemetry
+    Events --> Eval
+```
+
 ## Control and data flow
 
 A typical run follows this sequence:
@@ -128,9 +178,18 @@ The architecture expands only when a release requires it:
 This sequence is intentional: module boundaries are established early, while
 network boundaries are introduced only when scale or reliability demands them.
 
+```mermaid
+flowchart LR
+    Local["v0.1: local SDK and runtime"] --> Managed["v0.2-v0.5: control plane and durable state"]
+    Managed --> Distributed["v0.6-v0.9: broker and worker pools"]
+    Distributed --> Production["v1.0: highly available self-hosted platform"]
+```
+
 ## Related documents
 
 - [Control Plane](control-plane.md)
+- [Detailed System Design](system-design.md)
+- [User and Operator Flows](user-flows.md)
 - [Agent Runtime](runtime.md)
 - [Workflow Engine](workflow-engine.md)
 - [Security Model](security-model.md)

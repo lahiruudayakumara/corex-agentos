@@ -79,6 +79,47 @@ The authoritative service writes state and an outbox entry in one database
 transaction. Publishing from the outbox avoids loss between a database commit
 and broker publication.
 
+### Event publication and projection flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Producer as Domain service or runtime
+    participant DB as Transactional store
+    participant Outbox as Outbox relay
+    participant Stream as Event stream
+    participant Projector as Idempotent projector
+    participant ReadModel as Query model
+    participant Telemetry as Telemetry pipeline
+
+    Producer->>DB: Commit state change and event envelope
+    DB-->>Producer: Transaction committed
+    Outbox->>DB: Claim unpublished event
+    Outbox->>Stream: Publish with event ID
+    Stream-->>Outbox: Durable acknowledgement
+    Outbox->>DB: Mark publication complete
+    par Product projection
+        Stream->>Projector: At-least-once delivery
+        Projector->>Projector: Deduplicate and validate schema
+        Projector->>ReadModel: Apply projection transactionally
+    and Operational telemetry
+        Stream->>Telemetry: Derive spans, metrics, or analytics
+    end
+```
+
+### Ordering scope
+
+```mermaid
+flowchart LR
+    RunA["Run A sequence 1..n"] --> PartitionA["Ordering key: Run A"]
+    RunB["Run B sequence 1..n"] --> PartitionB["Ordering key: Run B"]
+    PartitionA --> Consumer["Idempotent consumer"]
+    PartitionB --> Consumer
+    Consumer --> Reconcile{"Gap or duplicate?"}
+    Reconcile -- No --> Apply["Apply event"]
+    Reconcile -- Yes --> Durable["Reconcile from durable run state"]
+```
+
 ## Sequence and terminal outcomes
 
 The producer assigns a monotonically increasing sequence within a run or node

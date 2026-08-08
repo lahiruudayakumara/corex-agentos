@@ -95,6 +95,35 @@ stateDiagram-v2
 State transitions are validated centrally and made idempotent. A duplicated
 worker event must not advance a run twice or duplicate usage charges.
 
+### Run creation and dispatch sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Developer
+    participant Client as Portal, CLI, or SDK
+    participant API as Control-plane API
+    participant DB as PostgreSQL
+    participant Outbox as Outbox publisher
+    participant Broker as Execution transport
+    participant Worker as Runtime worker
+
+    Developer->>Client: Start an agent or workflow run
+    Client->>API: POST run with idempotency key
+    API->>API: Authenticate, authorize, and validate
+    API->>DB: Create run and outbox record atomically
+    DB-->>API: Pending run
+    API-->>Client: 202 Accepted with run ID
+    Outbox->>DB: Claim unpublished dispatch record
+    Outbox->>Broker: Publish execution command
+    Broker->>Worker: Deliver command
+    Worker->>Broker: Acknowledge after durable claim
+    Worker-->>API: Emit lifecycle events
+    API->>DB: Project event into run state
+    Client->>API: Read or stream run status
+    API-->>Client: Current state and trace references
+```
+
 ## Dispatch and scheduling
 
 Early releases may dispatch in-process or to a directly managed runtime. The
@@ -104,6 +133,21 @@ JetStream without changing domain semantics.
 The scheduler resolves due schedules, creates idempotent runs, and hands them
 to the same dispatch path as manual runs. It must tolerate leader restarts and
 duplicate wakeups.
+
+### Control-plane component flow
+
+```mermaid
+flowchart LR
+    Transport["HTTP and message transports"] --> Application["Application use cases"]
+    Application --> Domain["Domain invariants"]
+    Application --> Ports["Repository and service ports"]
+    Ports --> Postgres["PostgreSQL adapters"]
+    Ports --> Messaging["Event and dispatch adapters"]
+    Ports --> Secrets["Credential provider"]
+    Bootstrap["Bootstrap and configuration"] -.->|constructs| Transport
+    Bootstrap -.->|constructs| Application
+    Bootstrap -.->|constructs| Ports
+```
 
 ## Scaling and failure handling
 
