@@ -8,6 +8,7 @@ says otherwise, architecture pages describe the target design from the
 ## Architecture
 
 - [System overview](architecture/overview.md)
+- [Architecture delivery path](architecture/implementation-path.md)
 - [Platform planes and modules](architecture/platform-planes.md)
 - [Detailed system design](architecture/system-design.md)
 - [User and operator flows](architecture/user-flows.md)
@@ -32,6 +33,7 @@ silently rewritten when a decision changes; a new ADR supersedes the old one.
 
 - [Business documentation index](business/README.md)
 - [Commercialization strategy](business/commercialization-strategy.md)
+- [Competitive landscape](business/competitive-landscape.md)
 - [Investor brief](business/investor-brief.md)
 - [Metrics and financial model](business/metrics-and-financial-model.md)
 - [Partner program](business/partner-program.md)

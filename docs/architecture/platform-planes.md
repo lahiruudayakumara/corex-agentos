@@ -529,6 +529,11 @@ sequenceDiagram
 
 ## Roadmap activation
 
+Plane activation is gated by evidence, not by the existence of a diagram. A
+plane begins as an interface or in-process module where possible and becomes
+external infrastructure only when its release needs the corresponding state,
+scale, security, or reliability property.
+
 ```mermaid
 flowchart LR
     Init["Initialization"] --> V01["v0.1: experience SDK, execution, model/tool, events"]
@@ -546,6 +551,7 @@ flowchart LR
 ## Related documents
 
 - [Architecture Overview](overview.md)
+- [Architecture Delivery Path](implementation-path.md)
 - [Detailed System Design](system-design.md)
 - [Control Plane](control-plane.md)
 - [Workflow Engine](workflow-engine.md)

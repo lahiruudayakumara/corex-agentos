@@ -8,6 +8,8 @@ investment, and partnership plans.
 - [Commercialization Strategy](commercialization-strategy.md) defines target
   customers, packaging, routes to market, validation gates, and commercial
   risks.
+- [Competitive Landscape](competitive-landscape.md) compares Corex with the
+  closest managed and open agent platforms using official product documentation.
 - [Investor Brief](investor-brief.md) summarizes the opportunity, current
   status, defensibility, financing thesis, milestones, and diligence needs.
 - [Metrics and Financial Model](metrics-and-financial-model.md) defines the

@@ -6,6 +6,10 @@ Target architecture. The repository is currently in its initialization phase;
 implementation proceeds incrementally according to the
 [roadmap](../../ROADMAP.md).
 
+The full diagram is a destination, not an instruction to instantiate every
+plane now. The [Architecture Delivery Path](implementation-path.md) defines the
+smallest approved implementation sequence and evidence gates.
+
 ## Purpose
 
 Corex AgentOS is an operational layer for defining, executing, governing,
@@ -20,6 +24,24 @@ The architecture optimizes for:
 - immutable definitions for reproducible runs;
 - local development before distributed infrastructure;
 - self-hosting with portable, open interfaces.
+
+## Delivery architecture rule
+
+```mermaid
+flowchart LR
+    First["One provider"] --> Second["One read-only tool"]
+    Second --> Third["One model-tool-model loop"]
+    Third --> Fourth["One complete trace"]
+    Fourth --> Reliable["Reliability and contract tests"]
+    Reliable --> Evidence["Repeat design-partner use"]
+    Evidence --> Control["Smallest useful control plane"]
+    Control --> Workflow["Smallest durable flagship workflow"]
+    Workflow --> Scale["Governance, integrations, and distribution when evidenced"]
+```
+
+No future plane should become an early infrastructure dependency. v0.1 runs in
+one Python process without PostgreSQL, NATS, Redis, Kubernetes, or a Go control
+plane, while preserving interfaces that allow those planes to be added later.
 
 ## High-level platform components and interactions
 
@@ -310,6 +332,7 @@ flowchart LR
 
 ## Related documents
 
+- [Architecture Delivery Path](implementation-path.md)
 - [Platform Planes and Modules](platform-planes.md)
 - [Control Plane](control-plane.md)
 - [Detailed System Design](system-design.md)
