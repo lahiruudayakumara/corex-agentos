@@ -26,3 +26,21 @@ says otherwise, architecture pages describe the target design from the
 
 ADRs record consequential decisions and their tradeoffs. Accepted ADRs are not
 silently rewritten when a decision changes; a new ADR supersedes the old one.
+
+## Commercialization, investment, and partnerships
+
+- [Business documentation index](business/README.md)
+- [Commercialization strategy](business/commercialization-strategy.md)
+- [Investor brief](business/investor-brief.md)
+- [Metrics and financial model](business/metrics-and-financial-model.md)
+- [Partner program](business/partner-program.md)
+
+Business documents are planning materials rather than an investment offer,
+financial forecast, legal commitment, or announced product packaging.
+
+## Users, capabilities, and access
+
+- [Product documentation index](product/README.md)
+- [Personas and use cases](product/personas-and-use-cases.md)
+- [Complete capability catalog](product/capability-catalog.md)
+- [Roles and permissions](product/roles-and-permissions.md)
