@@ -81,6 +81,50 @@ not depend on an in-memory worker.
 The requester cannot approve its own action unless an explicit policy permits
 that relationship.
 
+### Sensitive tool approval flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Operator
+    participant Agent as Agent runtime
+    participant Policy as Policy engine
+    participant Control as Control plane
+    participant Approval as Approval store
+    participant Tool as External tool
+    participant Audit as Audit log
+
+    Agent->>Policy: Evaluate exact tool and normalized arguments
+    Policy-->>Agent: Require human approval
+    Agent->>Control: Suspend execution and request approval
+    Control->>Approval: Persist request and argument digest
+    Control->>Audit: Record approval.requested
+    Control-->>Operator: Show operation, reason, risk, and scope
+    Operator->>Control: Approve or reject
+    Control->>Approval: Verify authority and persist decision
+    Control->>Audit: Record approval decision
+    alt Approved and arguments unchanged
+        Control-->>Agent: Resume with one-time authorization
+        Agent->>Tool: Execute scoped operation
+        Tool-->>Agent: Result
+    else Rejected, expired, or changed
+        Control-->>Agent: Terminate or follow rejection path
+    end
+```
+
+### Credential delegation flow
+
+```mermaid
+flowchart LR
+    Vault["Encrypted credential store"] --> Resolver["Credential resolver"]
+    Work["Authorized execution request"] --> Resolver
+    Resolver --> Grant["Short-lived scoped grant"]
+    Grant --> Worker["Runtime worker"]
+    Worker --> Adapter["Single provider or tool adapter"]
+    Adapter --> External["External service"]
+    Worker -.->|no unrelated secrets| Denied["Other providers and tools"]
+```
+
 ## Input and output protection
 
 All external inputs have size, type, and schema limits. Rendered model content

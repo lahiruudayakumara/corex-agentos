@@ -54,6 +54,49 @@ Each boundary emits structured lifecycle events. The loop has explicit maximum
 iterations and cannot continue after cancellation, deadline expiry, or budget
 exhaustion.
 
+### Model and tool interaction sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Worker as Runtime worker
+    participant Agent as Agent executor
+    participant Policy as Permission and policy gate
+    participant Model as Model adapter
+    participant Tool as Tool or MCP adapter
+    participant Events as Event and trace emitter
+
+    Worker->>Agent: Execute with immutable context
+    Agent->>Events: agent.started
+    loop Until final output or limit reached
+        Agent->>Policy: Check model and budget permission
+        Policy-->>Agent: Effective decision
+        Agent->>Events: model.requested
+        Agent->>Model: Stream provider-independent request
+        Model-->>Agent: Content, tool calls, and usage
+        Agent->>Events: model.completed
+        alt Model requests tools
+            loop Each tool call
+                Agent->>Policy: Validate tool, arguments, and risk
+                alt Allowed
+                    Agent->>Events: tool.requested
+                    Agent->>Tool: Invoke with deadline and scoped credential
+                    Tool-->>Agent: Normalized result or error
+                    Agent->>Events: tool.completed
+                else Approval required
+                    Policy-->>Worker: Suspend with approval request
+                else Denied
+                    Policy-->>Agent: Normalized policy failure
+                end
+            end
+        else Final response
+            Agent->>Agent: Validate structured output
+        end
+    end
+    Agent->>Events: agent.completed or run.failed
+    Agent-->>Worker: Result and usage summary
+```
+
 ## Model abstraction
 
 Provider adapters implement a common interface for messages, streaming,
@@ -91,6 +134,17 @@ placed in public error messages.
 Cancellation is cooperative and propagates through model streams, tool calls,
 and child tasks. The runtime stops accepting new work, cancels cancellable
 operations, waits for bounded cleanup, and emits one terminal outcome.
+
+```mermaid
+flowchart TD
+    Signal["Cancellation or deadline signal"] --> Context["Mark execution context cancelled"]
+    Context --> Stop["Stop scheduling model and tool work"]
+    Stop --> Fanout["Propagate cancellation to active adapters"]
+    Fanout --> Grace["Wait for bounded cleanup"]
+    Grace --> Terminal{"Operation stopped safely?"}
+    Terminal -- Yes --> Cancelled["Emit one cancelled terminal event"]
+    Terminal -- No --> Forced["Record forced termination and uncertain side effects"]
+```
 
 ## State and memory
 

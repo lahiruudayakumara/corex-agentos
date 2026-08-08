@@ -8,6 +8,8 @@ says otherwise, architecture pages describe the target design from the
 ## Architecture
 
 - [System overview](architecture/overview.md)
+- [Detailed system design](architecture/system-design.md)
+- [User and operator flows](architecture/user-flows.md)
 - [Control plane](architecture/control-plane.md)
 - [Agent runtime](architecture/runtime.md)
 - [Workflow engine](architecture/workflow-engine.md)
