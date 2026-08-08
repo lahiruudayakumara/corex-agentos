@@ -37,3 +37,10 @@ silently rewritten when a decision changes; a new ADR supersedes the old one.
 
 Business documents are planning materials rather than an investment offer,
 financial forecast, legal commitment, or announced product packaging.
+
+## Users, capabilities, and access
+
+- [Product documentation index](product/README.md)
+- [Personas and use cases](product/personas-and-use-cases.md)
+- [Complete capability catalog](product/capability-catalog.md)
+- [Roles and permissions](product/roles-and-permissions.md)
