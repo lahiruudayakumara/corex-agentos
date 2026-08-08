@@ -1,0 +1,23 @@
+[project]
+name = "corex-agentos-workspace"
+version = "0.0.0"
+requires-python = ">=3.12"
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+  "apps/agent-runtime",
+  "packages/sdk-python",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = [
+  "apps/agent-runtime/tests",
+  "packages/sdk-python/tests",
+]

@@ -6,7 +6,9 @@ settings:
 
 importers:
 
-  .:
+  .: {}
+
+  apps/portal:
     dependencies:
       react:
         specifier: ^19.2.8
@@ -48,6 +50,10 @@ importers:
       vite:
         specifier: ^8.2.0
         version: 8.2.1(@types/node@24.13.3)
+
+  packages/api-client-ts: {}
+
+  packages/ui: {}
 
 packages:
 
