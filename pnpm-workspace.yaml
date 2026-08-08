@@ -1,0 +1,6 @@
+packages:
+  - apps/portal
+  - packages/api-client-ts
+  - packages/ui
+
+onlyBuiltDependencies: []

@@ -1,0 +1,11 @@
+{
+  "name": "corex-agentos",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.14.0",
+  "scripts": {
+    "build": "pnpm --filter @corex/portal build",
+    "dev": "pnpm --filter @corex/portal dev",
+    "lint": "pnpm --filter @corex/portal lint"
+  }
+}

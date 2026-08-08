@@ -1,0 +1,7 @@
+go 1.25.0
+
+use (
+	./apps/cli
+	./apps/control-plane
+	./packages/sdk-go
+)
