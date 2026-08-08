@@ -71,11 +71,106 @@ Each release should remain usable independently.
 
 Features may move between releases as the architecture evolves.
 
+## Delivery Model and Evidence Gates
+
+The architecture documents describe the destination. They do not authorize
+building every plane at once. Delivery proceeds through the smallest complete
+vertical slice that produces working software and customer evidence.
+
+```mermaid
+flowchart LR
+    Init["Repository initialization"] --> Slice["v0.1.0: one provider, one tool, one complete trace"]
+    Slice --> Reliable["v0.1.x: reliability and contract hardening"]
+    Reliable --> Evidence{"3-5 design partners show repeat use?"}
+    Evidence -- No --> Learn["Fix runtime, SDK, trace, or use-case gaps"]
+    Learn --> Reliable
+    Evidence -- Yes --> Control["v0.2: smallest useful control plane"]
+    Control --> Workflow["v0.3: flagship durable workflow"]
+    Workflow --> Expand["Add integrations, governance, and scale only when evidenced"]
+```
+
+Delivery rules:
+
+- Complete one end-to-end path before adding breadth.
+- Support one model provider and one representative tool before adding more
+  providers or integrations.
+- Capture a useful execution trace from the first runnable release.
+- Keep contracts provider-independent even when only one adapter exists.
+- Add a control plane only after local runtime usage repeats outside the core
+  team.
+- Add workflow infrastructure only after single-agent execution is reliable.
+- Add PostgreSQL, NATS, Redis, Kubernetes, and GitOps components only in the
+  releases that need their operational properties.
+- Treat design-partner evidence as a release input, not as marketing after the
+  architecture is already built.
+- Move, narrow, or remove features when evidence does not justify them.
+
+### Release Gates
+
+| Release | Required entry evidence | Required exit evidence |
+| --- | --- | --- |
+| v0.1 | Repository and Python package initialize successfully | One useful local agent repeatedly calls one tool and produces a complete trace |
+| v0.2 | v0.1 reliability plus repeat use by 3-5 design partners | A team can manage versions and inspect centrally persisted runs |
+| v0.3 | Customers need multi-step work that cannot be handled reliably by one agent | The flagship workflow survives a controlled node failure and resumes safely |
+| v0.4 | Real workflows require reusable external tools or project knowledge | One MCP and one knowledge integration improve a measured workflow outcome |
+| v0.5 | A design partner requires enforceable controls or repeatable quality gates | A sensitive action is governed and a candidate version passes a repeatable evaluation gate |
+| v0.6 | Measured concurrency or reliability exceeds a single runtime process | Work survives worker failure without duplicate terminal effects |
+| v0.7 | Users cannot diagnose behavior efficiently from existing run events | A failed run can be explained from traces without raw application-log investigation |
+| v0.8 | Multiple external teams need stable integration and extension contracts | SDK, API, event, and plugin compatibility is tested and documented |
+| v0.9 | Reference deployments expose concrete production risks | Security, resilience, performance, migration, and release tests pass |
+| v1.0 | Repeat production deployments and upgrade evidence exist | A team can deploy, upgrade, govern, observe, and recover the self-hosted platform |
+
+Passing a technical checklist without the required usage evidence does not
+automatically start the next release.
+
 ---
 
 ## v0.1 — Execution Foundation
 
 **Goal:** Execute a real AI agent locally with models and tools while capturing its complete execution trace.
+
+### Delivery Sequence
+
+#### v0.1.0 — Golden Vertical Slice
+
+Implement only the shortest useful path:
+
+- Minimal Python SDK and runtime.
+- One OpenAI-compatible model adapter.
+- One representative, read-only repository tool.
+- One model-to-tool-to-model loop.
+- In-process structured event collection.
+- One inspectable run result containing output, model activity, tool activity,
+  tokens, latency, errors, duration, and estimated cost.
+- One runnable repository-analysis example.
+- Deterministic fake-model and fake-tool tests for the same path.
+
+Do not require PostgreSQL, NATS, Redis, Kubernetes, a control plane, the portal,
+MCP, multi-agent workflows, persistent memory, or enterprise authentication for
+this milestone.
+
+#### v0.1.1 — Reliability
+
+After the golden path works, add:
+
+- Structured input and output validation.
+- Streaming.
+- Timeout and cancellation propagation.
+- Normalized runtime, provider, and tool errors.
+- Safe retry classification with bounded backoff.
+- Token, cost, deadline, tool-call, and iteration limits.
+- Trace completeness and failure-path tests.
+
+#### v0.1.2 — Portability
+
+After reliability is demonstrated:
+
+- Add provider contract tests.
+- Add Anthropic as the second provider.
+- Add Ollama/local models only after the same contract passes.
+- Add model fallback only after two providers have compatible, observable
+  behavior.
+- Add more tools only when they exercise a new contract or a validated use case.
 
 ### Agent Runtime
 
@@ -94,9 +189,12 @@ Features may move between releases as the architecture evolves.
 
 Create a provider-independent model interface.
 
-Initial providers:
+Golden-path provider:
 
 - OpenAI-compatible APIs.
+
+Follow-on providers after the reliability gate:
+
 - Anthropic.
 - Ollama/local models.
 
@@ -186,13 +284,30 @@ result = agent.run(
 
 ### v0.1 Success Criteria
 
-A developer can install the SDK, configure a model, register tools, execute an agent and inspect the resulting execution trace.
+A developer can start from a clean environment, install the SDK, configure the
+golden-path model, register the repository tool, execute the example, and
+inspect a complete successful or failed execution trace.
+
+Before v0.2 begins:
+
+- the golden path passes deterministic contract and failure tests;
+- repeated runs do not leak state or produce duplicate terminal events;
+- trace fields are useful for diagnosing at least one real failure;
+- 3-5 design partners attempt a real workflow and demonstrate repeat use or
+  provide clear evidence of the gaps blocking repeat use.
 
 ---
 
 ## v0.2 — Control Plane
 
 **Goal:** Manage agents and executions through a centralized API and developer portal.
+
+### Entry Gate
+
+Do not start the centralized platform merely because its architecture is
+documented. Begin v0.2 only when v0.1 is reliable and design partners need
+shared versions, durable run history, project access, or a portal for the same
+working execution path.
 
 ### Go Control Plane
 
@@ -303,13 +418,23 @@ corex run logs
 
 ### v0.2 Success Criteria
 
-A developer can start Corex AgentOS, create an agent through the control plane, execute it and inspect the run through the web portal.
+A small team can start Corex AgentOS, publish an immutable version of the same
+v0.1 agent, execute it through the control plane, and inspect a durably stored
+run through the portal. The centralized path must preserve the v0.1 runtime
+contract rather than introduce a second execution implementation.
 
 ---
 
 ## v0.3 — Workflow Engine
 
 **Goal:** Move from individual agents to reliable multi-agent workflows.
+
+### Entry Gate
+
+Begin workflow-engine work only after a design partner demonstrates a real
+multi-step use case that the reliable single-agent and tool loop cannot express
+or recover safely. Implement the smallest flagship DAG before a general visual
+workflow builder.
 
 ### Workflow Specification
 
@@ -1136,7 +1261,13 @@ The platform focuses on the operational lifecycle of AI agents.
 
 ## Current Priority
 
-The current engineering priority is v0.1 — Execution Foundation.
+The current engineering priority is v0.1.0 — the golden vertical slice within
+the Execution Foundation.
+
+The slice uses one OpenAI-compatible provider, one read-only repository tool,
+one model-to-tool-to-model loop, and one complete in-process trace. Provider
+breadth, the control plane, workflows, MCP, persistence, and distributed
+infrastructure are explicitly deferred until their gates are met.
 
 Before expanding the architecture, Corex AgentOS should demonstrate one complete vertical slice:
 
@@ -1160,7 +1291,9 @@ Trace entire Run
 Calculate Tokens + Cost
 ```
 
-Once this foundation is reliable, development should move toward the control plane and developer portal.
+Once this foundation is reliable and design partners demonstrate repeat use,
+development should move toward the smallest useful control plane and run
+explorer.
 
 ---
 

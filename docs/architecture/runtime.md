@@ -5,6 +5,11 @@
 Target architecture beginning in v0.1. The current Python package contains
 only initialization metadata.
 
+Implementation is intentionally staged. v0.1.0 supports one OpenAI-compatible
+adapter, one read-only repository tool, an in-process event sink, and one
+complete trace. Streaming, broad provider support, fallback, persistent memory,
+MCP, workflows, and distributed workers must not block that golden path.
+
 ## Responsibilities
 
 The Python agent runtime executes one agent or workflow node within an explicit
@@ -104,9 +109,10 @@ structured output, tool calls, usage, and errors. Adapters translate provider
 payloads at the edge. Core agent logic must not branch on an OpenAI, Anthropic,
 or Ollama response type.
 
-Fallback is policy-driven and observable. A fallback records both the failed
-attempt and the selected replacement; it must respect output compatibility,
-data residency, cost, and model permissions.
+Fallback is added only after two providers pass the same reliability contract.
+It is policy-driven and observable: a fallback records both the failed attempt
+and the selected replacement and respects output compatibility, data residency,
+cost, and model permissions.
 
 ## Tool abstraction
 
