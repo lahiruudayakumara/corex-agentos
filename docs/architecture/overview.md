@@ -21,22 +21,145 @@ The architecture optimizes for:
 - local development before distributed infrastructure;
 - self-hosting with portable, open interfaces.
 
-## System context
+## High-level platform components and interactions
 
 ```mermaid
-flowchart LR
-    User["Developer or operator"] --> Portal["Portal and CLI"]
-    SDK["Application using an SDK"] --> Control["Control plane"]
-    Portal --> Control
-    Control --> Runtime["Agent runtime"]
-    Runtime --> Models["Model providers"]
-    Runtime --> MCP["MCP servers and tools"]
-    Runtime --> Knowledge["Knowledge sources"]
-    Control --> Data["PostgreSQL"]
-    Control --> Events["Event delivery"]
-    Runtime --> Events
-    Events --> Telemetry["Observability backends"]
+flowchart TB
+    subgraph Users["Users and client applications"]
+        People["Developers, operators, approvers, and auditors"]
+        Apps["AI-enabled products and internal applications"]
+    end
+
+    subgraph Experience["Experience plane"]
+        Portal["Developer portal"]
+        CLI["Corex CLI"]
+        SDK["Python, Go, and TypeScript SDKs"]
+    end
+
+    subgraph Edge["API and edge plane"]
+        API["Versioned REST API"]
+        Webhooks["Signed webhooks and event streams"]
+    end
+
+    subgraph Identity["Authentication and identity plane"]
+        IdP["Local identity, API keys, OIDC, and SSO"]
+        AuthN["Authentication and session validation"]
+        AuthZ["RBAC, project scope, and service identity"]
+    end
+
+    subgraph Control["Go control plane"]
+        Catalog["Projects, agents, models, tools, and versions"]
+        RunAPI["Run lifecycle and resource APIs"]
+    end
+
+    subgraph Security["Security and governance plane"]
+        Governance["Policy, approval, budgets, and guardrails"]
+        Credentials["Credential brokering and audit"]
+    end
+
+    subgraph Workflow["Workflow plane"]
+        Definition["Workflow definition and validation"]
+        Scheduler["Schedules, DAG coordination, and durable state"]
+        Dispatcher["Node dispatch, retry, pause, and recovery"]
+    end
+
+    subgraph Execution["Python execution plane"]
+        Workers["Runtime workers"]
+        Agent["Agent and model loop"]
+        ToolRuntime["Tool, MCP, and retrieval runtime"]
+    end
+
+    subgraph Integration["Integration plane"]
+        Models["Model providers"]
+        MCP["MCP servers and business tools"]
+        Knowledge["Documents, APIs, databases, and data sources"]
+    end
+
+    subgraph Data["Data plane"]
+        Postgres[("PostgreSQL")]
+        Vector[("pgvector and future vector stores")]
+        Events[("NATS JetStream")]
+        Redis[("Redis ephemeral coordination")]
+        Secrets["Encrypted secret storage"]
+        Artifacts["Artifact and object storage"]
+    end
+
+    subgraph Observability["Observability and evaluation plane"]
+        OTel["OpenTelemetry collection"]
+        Telemetry["Traces, metrics, and logs"]
+        Usage["Usage, cost, evaluations, and run explorer"]
+    end
+
+    subgraph GitOps["GitOps and delivery plane"]
+        Git["Source, schemas, policy, and deployment configuration"]
+        CI["Test, scan, build, sign, and publish"]
+        Reconcile["Environment reconciliation, migration, and rollback"]
+    end
+
+    People --> Portal
+    People --> CLI
+    Apps --> SDK
+    Portal --> API
+    CLI --> API
+    SDK --> API
+    API --> AuthN
+    AuthN --> IdP
+    AuthN --> AuthZ
+    AuthZ --> Catalog
+    AuthZ --> Governance
+    AuthZ --> RunAPI
+    API --> Catalog
+    API --> Governance
+    API --> RunAPI
+    Catalog --> Postgres
+    Governance --> Postgres
+    Governance --> Credentials
+    Credentials --> Secrets
+    RunAPI --> Definition
+    Definition --> Scheduler
+    Scheduler --> Postgres
+    Scheduler --> Redis
+    Scheduler --> Dispatcher
+    Dispatcher -->|Dispatch work| Events
+    Events --> Workers
+    Workers --> Agent
+    Agent --> Models
+    Agent --> ToolRuntime
+    ToolRuntime --> MCP
+    ToolRuntime --> Knowledge
+    ToolRuntime --> Vector
+    Workers --> Governance
+    Workers --> Artifacts
+    Workers -->|Execution events| Events
+    Events --> RunAPI
+    API --> Telemetry
+    Workers --> OTel
+    Events --> OTel
+    OTel --> Telemetry
+    Events --> Usage
+    Telemetry --> Usage
+    Usage --> Portal
+    RunAPI --> Webhooks
+    Webhooks --> Apps
+    Git --> CI
+    CI --> Reconcile
+    Reconcile -.-> Experience
+    Reconcile -.-> Identity
+    Reconcile -.-> Control
+    Reconcile -.-> Security
+    Reconcile -.-> Workflow
+    Reconcile -.-> Execution
+    Reconcile -.-> Observability
 ```
+
+At a high level, users and applications access Corex through the portal, CLI,
+SDKs, or REST API. The authentication plane establishes identity and scope. The
+control and workflow planes manage durable definitions, governance, schedules,
+and run coordination. Runtime workers execute agents against approved models,
+tools, and knowledge sources through the integration plane. The data plane
+holds durable and operational state. Execution events feed observability,
+usage, and evaluation views, while the GitOps plane validates and reconciles
+versioned platform changes.
 
 ## Major components
 
@@ -187,6 +310,7 @@ flowchart LR
 
 ## Related documents
 
+- [Platform Planes and Modules](platform-planes.md)
 - [Control Plane](control-plane.md)
 - [Detailed System Design](system-design.md)
 - [User and Operator Flows](user-flows.md)
